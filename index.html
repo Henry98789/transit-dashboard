@@ -26,9 +26,13 @@
             .card-grid { gap: 1rem; }
             .card-inner { padding: 1.25rem; }
         }
-        .flag-icon {
-            font-size: 2rem;
-            line-height: 1;
+        .flag-img {
+            width: 48px;
+            height: 36px;
+            object-fit: cover;
+            border-radius: 4px;
+            flex-shrink: 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         .country-name {
             font-size: 1.35rem;
@@ -40,7 +44,6 @@
             font-weight: 500;
             color: #1e3a8a;
         }
-        /* Risk badges */
         .risk-low {
             background-color: #d1fae5;
             color: #065f46;
@@ -60,7 +63,6 @@
             border-radius: 9999px;
             white-space: nowrap;
         }
-        /* Footer colours */
         .footer-indonesia {
             background-color: #ecfdf5;
             border-top-color: #d1fae5;
@@ -75,6 +77,10 @@
             background-color: #fffbeb;
             border-top-color: #fde68a;
             color: #b45309;
+        }
+        .value-text {
+            text-align: right;
+            word-break: break-word;
         }
     </style>
 </head>
@@ -161,7 +167,13 @@
             return 'bg-gray-50 border-gray-100 text-gray-600';
         }
 
-        // Render cards using camelCase column names with whitespace-pre-line for multiline fields
+        function getFlagUrl(code) {
+            if (!code) return 'https://flagcdn.com/48x36/un.png';
+            const lower = code.toLowerCase();
+            return `https://flagcdn.com/48x36/${lower}.png`;
+        }
+
+        // Render cards using flag images and improved layout
         function renderCards() {
             if (!cardsContainer) return;
             if (!destinations.length) {
@@ -174,46 +186,45 @@
                 const riskBadgeClass = getRiskBadgeClass(dest.riskColor);
                 const footerClass = getFooterClass(dest.id);
                 const riskText = dest.risk || (dest.riskColor === 'emerald' ? 'Low Risk' : (dest.riskColor === 'rose' ? 'High Risk' : 'Time Critical'));
+                const flagUrl = getFlagUrl(dest.flagEmoji);
 
                 const card = document.createElement('div');
-                card.className = "bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 card-transition";
+                card.className = "bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 card-transition h-full flex flex-col";
                 card.innerHTML = `
-                    <div class="p-5 card-inner">
-                        <div class="flex justify-between items-start">
-                            <div class="flex items-center gap-2">
-                                <span class="flag-icon">${escapeHtml(dest.flagEmoji || '🌍')}</span>
+                    <div class="p-5 card-inner flex-1">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-3">
+                                <img src="${flagUrl}" alt="${escapeHtml(dest.name)}" class="flag-img" loading="lazy">
                                 <div>
                                     <h2 class="country-name">${escapeHtml(dest.name)}</h2>
                                     <p class="capital-name">${escapeHtml(dest.city)}</p>
                                 </div>
                             </div>
-                            <span class="risk-badge ${riskBadgeClass}">${escapeHtml(riskText)}</span>
+                            <span class="risk-badge ${riskBadgeClass} ml-2">${escapeHtml(riskText)}</span>
                         </div>
-                        <div class="mt-4 border-t border-gray-100 pt-3">
-                            <div class="flex justify-between items-baseline">
-                                <span class="text-gray-500 text-sm">Initial Visa Fee</span>
-                                <span class="font-bold text-gray-900">${escapeHtml(dest.visaFee)}</span>
+                        <div class="border-t border-gray-100 pt-3 space-y-2 text-sm">
+                            <div class="flex justify-between gap-4">
+                                <span class="text-gray-500 shrink-0">Initial Visa Fee</span>
+                                <span class="font-bold text-gray-900 text-right">${escapeHtml(dest.visaFee)}</span>
                             </div>
-                            <div class="mt-3 space-y-2 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Processing</span>
-                                    <span class="text-gray-800 text-right">${escapeHtml(dest.processing)}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Max stay</span>
-                                    <span class="text-gray-800 text-right whitespace-pre-line">${escapeHtml(dest.maxStay)}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Extension cost</span>
-                                    <span class="text-gray-800 whitespace-pre-line">${escapeHtml(dest.extensionCost)}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Accommodation / night</span>
-                                    <span class="text-gray-800">${escapeHtml(dest.accommodation)}</span>
-                                </div>
-                                <div class="mt-2 pt-2 border-t border-gray-50 text-xs text-gray-500 whitespace-pre-line">
-                                    <span class="font-medium">Flight:</span> ${escapeHtml(dest.flightNote)}
-                                </div>
+                            <div class="flex justify-between gap-4">
+                                <span class="text-gray-500 shrink-0">Processing</span>
+                                <span class="text-gray-800 text-right">${escapeHtml(dest.processing)}</span>
+                            </div>
+                            <div class="flex justify-between gap-4">
+                                <span class="text-gray-500 shrink-0">Max stay</span>
+                                <span class="text-gray-800 text-right whitespace-pre-line">${escapeHtml(dest.maxStay)}</span>
+                            </div>
+                            <div class="flex justify-between gap-4">
+                                <span class="text-gray-500 shrink-0">Extension cost</span>
+                                <span class="text-gray-800 text-right whitespace-pre-line">${escapeHtml(dest.extensionCost)}</span>
+                            </div>
+                            <div class="flex justify-between gap-4">
+                                <span class="text-gray-500 shrink-0">Accommodation / night</span>
+                                <span class="text-gray-800 text-right">${escapeHtml(dest.accommodation)}</span>
+                            </div>
+                            <div class="mt-2 pt-2 border-t border-gray-50 text-xs text-gray-500 whitespace-pre-line">
+                                <span class="font-medium">Flight:</span> ${escapeHtml(dest.flightNote)}
                             </div>
                         </div>
                     </div>
@@ -225,7 +236,7 @@
             });
         }
 
-        // Build edit forms (uses camelCase field names)
+        // Build edit forms (unchanged, but uses camelCase)
         function buildEditForms() {
             if (!editFormsContainer) return;
             editFormsContainer.innerHTML = '';
@@ -246,13 +257,12 @@
                         <div><label class="block text-xs text-gray-500">Accommodation</label><input type="text" data-idx="${idx}" data-field="accommodation" value="${escapeHtml(dest.accommodation)}" class="w-full border rounded px-2 py-1"></div>
                         <div><label class="block text-xs text-gray-500">Flight note</label><input type="text" data-idx="${idx}" data-field="flightNote" value="${escapeHtml(dest.flightNote)}" class="w-full border rounded px-2 py-1"></div>
                         <div class="md:col-span-2"><label class="block text-xs text-gray-500">Footer note</label><input type="text" data-idx="${idx}" data-field="footerNote" value="${escapeHtml(dest.footerNote)}" class="w-full border rounded px-2 py-1"></div>
-                        <div><label class="block text-xs text-gray-500">Flag emoji</label><input type="text" data-idx="${idx}" data-field="flagEmoji" value="${escapeHtml(dest.flagEmoji)}" class="w-full border rounded px-2 py-1" placeholder="🇮🇩"></div>
+                        <div><label class="block text-xs text-gray-500">Flag emoji (two-letter code)</label><input type="text" data-idx="${idx}" data-field="flagEmoji" value="${escapeHtml(dest.flagEmoji)}" class="w-full border rounded px-2 py-1" placeholder="id, fj, sb"></div>
                     </div>
                 `;
                 editFormsContainer.appendChild(formDiv);
             });
 
-            // Save on change (blur)
             document.querySelectorAll('#editFormsContainer input').forEach(inp => {
                 inp.addEventListener('change', async (e) => {
                     if (!isAdmin) return;
