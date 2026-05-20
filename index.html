@@ -26,13 +26,10 @@
             .card-grid { gap: 1rem; }
             .card-inner { padding: 1.25rem; }
         }
-        .flag-img {
-            width: 48px;
-            height: 36px;
-            object-fit: cover;
-            border-radius: 4px;
+        .flag-emoji {
+            font-size: 2rem;
+            line-height: 1;
             flex-shrink: 0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         .country-name {
             font-size: 1.35rem;
@@ -167,13 +164,7 @@
             return 'bg-gray-50 border-gray-100 text-gray-600';
         }
 
-        function getFlagUrl(code) {
-            if (!code) return 'https://flagcdn.com/48x36/un.png';
-            const lower = code.toLowerCase();
-            return `https://flagcdn.com/48x36/${lower}.png`;
-        }
-
-        // Render cards using flag images and improved layout
+        // Render cards using emoji flags and improved layout
         function renderCards() {
             if (!cardsContainer) return;
             if (!destinations.length) {
@@ -186,7 +177,7 @@
                 const riskBadgeClass = getRiskBadgeClass(dest.riskColor);
                 const footerClass = getFooterClass(dest.id);
                 const riskText = dest.risk || (dest.riskColor === 'emerald' ? 'Low Risk' : (dest.riskColor === 'rose' ? 'High Risk' : 'Time Critical'));
-                const flagUrl = getFlagUrl(dest.flagEmoji);
+                const flagEmoji = dest.flagEmoji || '🌍';
 
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 card-transition h-full flex flex-col";
@@ -194,7 +185,7 @@
                     <div class="p-5 card-inner flex-1">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-3">
-                                <img src="${flagUrl}" alt="${escapeHtml(dest.name)}" class="flag-img" loading="lazy">
+                                <span class="flag-emoji">${escapeHtml(flagEmoji)}</span>
                                 <div>
                                     <h2 class="country-name">${escapeHtml(dest.name)}</h2>
                                     <p class="capital-name">${escapeHtml(dest.city)}</p>
@@ -236,7 +227,7 @@
             });
         }
 
-        // Build edit forms (unchanged, but uses camelCase)
+        // Build edit forms (unchanged)
         function buildEditForms() {
             if (!editFormsContainer) return;
             editFormsContainer.innerHTML = '';
@@ -257,7 +248,7 @@
                         <div><label class="block text-xs text-gray-500">Accommodation</label><input type="text" data-idx="${idx}" data-field="accommodation" value="${escapeHtml(dest.accommodation)}" class="w-full border rounded px-2 py-1"></div>
                         <div><label class="block text-xs text-gray-500">Flight note</label><input type="text" data-idx="${idx}" data-field="flightNote" value="${escapeHtml(dest.flightNote)}" class="w-full border rounded px-2 py-1"></div>
                         <div class="md:col-span-2"><label class="block text-xs text-gray-500">Footer note</label><input type="text" data-idx="${idx}" data-field="footerNote" value="${escapeHtml(dest.footerNote)}" class="w-full border rounded px-2 py-1"></div>
-                        <div><label class="block text-xs text-gray-500">Flag emoji (two-letter code)</label><input type="text" data-idx="${idx}" data-field="flagEmoji" value="${escapeHtml(dest.flagEmoji)}" class="w-full border rounded px-2 py-1" placeholder="id, fj, sb"></div>
+                        <div><label class="block text-xs text-gray-500">Flag emoji</label><input type="text" data-idx="${idx}" data-field="flagEmoji" value="${escapeHtml(dest.flagEmoji)}" class="w-full border rounded px-2 py-1" placeholder="🇮🇩"></div>
                     </div>
                 `;
                 editFormsContainer.appendChild(formDiv);
