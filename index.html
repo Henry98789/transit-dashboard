@@ -7,20 +7,75 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f3f4f6; }
-        .card-transition { transition: all 0.2s ease; }
-        .card-transition:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -12px rgba(0,0,0,0.15); }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #f3f4f6;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .card-transition {
+            transition: all 0.2s ease;
+        }
+        .card-transition:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -12px rgba(0,0,0,0.15);
+        }
         @media (max-width: 768px) {
             .card-grid { gap: 1rem; }
             .card-inner { padding: 1.25rem; }
         }
-        .flag-icon { font-size: 1.8rem; line-height: 1; }
-        .capital-name { font-size: 0.85rem; font-weight: 500; color: #1e3a8a; letter-spacing: -0.2px; }
-        .country-name { font-size: 1.4rem; font-weight: 800; color: #0f172a; }
-        /* fix for html2canvas alignment */
-        .card-inner, .card-footer { break-inside: avoid; }
+        .flag-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+        .country-name {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .capital-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1e3a8a;
+        }
+        /* Risk badges */
+        .risk-low {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .risk-high {
+            background-color: #ffe4e6;
+            color: #9f1239;
+        }
+        .risk-critical {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .risk-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.25rem 0.7rem;
+            border-radius: 9999px;
+            white-space: nowrap;
+        }
+        /* Footer colours */
+        .footer-indonesia {
+            background-color: #ecfdf5;
+            border-top-color: #d1fae5;
+            color: #065f46;
+        }
+        .footer-fiji {
+            background-color: #f0f9ff;
+            border-top-color: #bae6fd;
+            color: #0369a1;
+        }
+        .footer-solomon {
+            background-color: #fffbeb;
+            border-top-color: #fde68a;
+            color: #b45309;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -28,26 +83,30 @@
 <div class="max-w-7xl mx-auto">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">✈️ Transit Comparison</h1>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">✈️ Transit Destination Comparison</h1>
             <p class="text-gray-500 text-sm mt-1" id="modeHint">Viewer mode – live updates from Supabase</p>
         </div>
         <div class="flex flex-wrap gap-3">
             <button id="adminLoginBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow">🔐 Admin Login</button>
             <button id="adminLogoutBtn" class="hidden bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow">🚪 Exit Admin</button>
-            <button id="exportPngBtn" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow flex items-center gap-2">📸 Export PNG</button>
+            <button id="exportPngBtn" class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-xl text-sm font-medium shadow flex items-center gap-2">📸 Export PNG</button>
         </div>
     </div>
 
+    <!-- Edit Panel (admin only) -->
     <div id="editPanel" class="hidden mb-6 bg-white p-5 rounded-2xl shadow-md border border-gray-200">
         <div class="flex justify-between items-center mb-3">
             <h3 class="font-semibold text-gray-700">✏️ Edit Destinations (live sync)</h3>
             <button id="closeEditPanel" class="text-gray-400 hover:text-gray-600">✖</button>
         </div>
         <div id="editFormsContainer" class="space-y-4 max-h-96 overflow-y-auto"></div>
-        <div class="mt-4 text-right text-xs text-gray-400">Changes save automatically to Supabase ⚡</div>
+        <div class="mt-4 text-right text-xs text-gray-400">Changes save when you leave the field ⚡</div>
     </div>
 
-    <div id="cardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 card-grid"></div>
+    <!-- Cards container -->
+    <div id="cardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 card-grid">
+        <div class="bg-white rounded-2xl p-8 text-center text-gray-500">Loading destinations...</div>
+    </div>
 
     <div class="mt-8 text-center text-xs text-gray-400 border-t pt-6">
         ⚡ Data stored in Supabase – admin edits appear for everyone in real time
@@ -55,223 +114,226 @@
 </div>
 
 <script>
-    // ========== 🔧 SUPABASE CREDENTIALS ==========
-    const SUPABASE_URL = "https://tkbgeacavsgcxelfobll.supabase.co"; 
-    const SUPABASE_ANON_KEY = "sb_publishable_hzwEJKKh7rwrloigc3YkFw_P9E-bCYo"; 
-    // ===============================================================
+    (function() {
+        // ========== SUPABASE CREDENTIALS ==========
+        const SUPABASE_URL = "https://tkbgeacavsgcxelfobll.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_hzwEJKKh7rwrloigc3YkFw_P9E-bCYo";
+        // =========================================
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const TABLE = "destinations";
-    const ADMIN_PASSWORD = "TransitAdmin2025";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const TABLE = "destinations";
+        const ADMIN_PASSWORD = "TransitAdmin2025";
 
-    let isAdmin = false;
-    let destinations = [];
-    let realtimeSubscription = null;
+        let isAdmin = false;
+        let destinations = [];
+        let realtimeChannel = null;
 
-    // DOM elements
-    const cardsContainer = document.getElementById("cardsContainer");
-    const adminLoginBtn = document.getElementById("adminLoginBtn");
-    const adminLogoutBtn = document.getElementById("adminLogoutBtn");
-    const editPanel = document.getElementById("editPanel");
-    const editFormsContainer = document.getElementById("editFormsContainer");
-    const closeEditPanel = document.getElementById("closeEditPanel");
-    const modeHint = document.getElementById("modeHint");
+        const cardsContainer = document.getElementById("cardsContainer");
+        const adminLoginBtn = document.getElementById("adminLoginBtn");
+        const adminLogoutBtn = document.getElementById("adminLogoutBtn");
+        const editPanel = document.getElementById("editPanel");
+        const editFormsContainer = document.getElementById("editFormsContainer");
+        const closeEditPanel = document.getElementById("closeEditPanel");
+        const modeHint = document.getElementById("modeHint");
+        const exportBtn = document.getElementById("exportPngBtn");
 
-    // Helper: escape HTML
-    function escapeHtml(str) { return String(str).replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
 
-    // ---------- Render Cards (viewer & admin) ----------
-    function renderCards() {
-        if (!cardsContainer || !destinations.length) return;
-        cardsContainer.innerHTML = '';
-        
-        // Define footer background colors per country (based on flag or ID)
-        const footerColors = {
-            indonesia: "bg-emerald-50 border-emerald-200 text-emerald-800",
-            fiji: "bg-sky-50 border-sky-200 text-sky-800",
-            solomon: "bg-amber-50 border-amber-200 text-amber-800"
-        };
-        
-        destinations.forEach(dest => {
-            const riskColorMap = {
-                emerald: "bg-emerald-100 text-emerald-800",
-                rose: "bg-rose-100 text-rose-800",
-                amber: "bg-amber-100 text-amber-800"
-            };
-            const badgeClass = riskColorMap[dest.riskColor] || "bg-gray-100 text-gray-800";
-            const footerClass = footerColors[dest.id] || "bg-gray-50 border-gray-100 text-gray-600";
-            
-            const card = document.createElement('div');
-            card.className = "bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 card-transition h-full flex flex-col";
-            card.innerHTML = `
-                <div class="p-5 card-inner flex-1">
-                    <div class="flex justify-between items-start gap-2">
-                        <div class="flex items-center gap-2">
-                            <span class="flag-icon text-3xl">${escapeHtml(dest.flagEmoji || '🌍')}</span>
-                            <div>
-                                <h2 class="country-name">${escapeHtml(dest.name)}</h2>
-                                <div class="capital-name">${escapeHtml(dest.city)}</div>
+        function getRiskBadgeClass(riskColor) {
+            if (riskColor === 'emerald') return 'risk-low';
+            if (riskColor === 'rose') return 'risk-high';
+            if (riskColor === 'amber') return 'risk-critical';
+            return 'risk-low';
+        }
+
+        function getFooterClass(id) {
+            if (id === 'indonesia') return 'footer-indonesia';
+            if (id === 'fiji') return 'footer-fiji';
+            if (id === 'solomon') return 'footer-solomon';
+            return 'bg-gray-50 border-gray-100 text-gray-600';
+        }
+
+        // Render cards using camelCase column names
+        function renderCards() {
+            if (!cardsContainer) return;
+            if (!destinations.length) {
+                cardsContainer.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center text-gray-500 col-span-full">No data. Please run INSERT SQL.</div>';
+                return;
+            }
+
+            cardsContainer.innerHTML = '';
+            destinations.forEach(dest => {
+                const riskBadgeClass = getRiskBadgeClass(dest.riskColor);
+                const footerClass = getFooterClass(dest.id);
+                const riskText = dest.risk || (dest.riskColor === 'emerald' ? 'Low Risk' : (dest.riskColor === 'rose' ? 'High Risk' : 'Time Critical'));
+
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 card-transition";
+                card.innerHTML = `
+                    <div class="p-5 card-inner">
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center gap-2">
+                                <span class="flag-icon">${escapeHtml(dest.flagEmoji || '🌍')}</span>
+                                <div>
+                                    <h2 class="country-name">${escapeHtml(dest.name)}</h2>
+                                    <p class="capital-name">${escapeHtml(dest.city)}</p>
+                                </div>
+                            </div>
+                            <span class="risk-badge ${riskBadgeClass}">${escapeHtml(riskText)}</span>
+                        </div>
+                        <div class="mt-4 border-t border-gray-100 pt-3">
+                            <div class="flex justify-between items-baseline">
+                                <span class="text-gray-500 text-sm">Initial Visa Fee</span>
+                                <span class="font-bold text-gray-900">${escapeHtml(dest.visaFee)}</span>
+                            </div>
+                            <div class="mt-3 space-y-2 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-500">Processing</span><span class="text-gray-800 text-right">${escapeHtml(dest.processing)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Max stay</span><span class="text-gray-800 text-right">${escapeHtml(dest.maxStay)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Extension cost</span><span class="text-gray-800">${escapeHtml(dest.extensionCost)}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Accommodation / night</span><span class="text-gray-800">${escapeHtml(dest.accommodation)}</span></div>
+                                <div class="mt-2 pt-2 border-t border-gray-50 text-xs text-gray-500"><span class="font-medium">Flight:</span> ${escapeHtml(dest.flightNote)}</div>
                             </div>
                         </div>
-                        <span class="${badgeClass} text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap">${escapeHtml(dest.risk)}</span>
                     </div>
-                    
-                    <div class="mt-5 space-y-3">
-                        <div class="flex justify-between items-baseline border-b border-gray-100 pb-1">
-                            <span class="text-gray-500 text-sm font-medium">Initial Visa Fee</span>
-                            <span class="font-bold text-gray-900">${escapeHtml(dest.visaFee)}</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <div><span class="text-gray-500">Processing</span><br><span class="font-medium text-gray-800">${escapeHtml(dest.processing)}</span></div>
-                            <div><span class="text-gray-500">Max stay</span><br><span class="font-medium text-gray-800">${escapeHtml(dest.maxStay)}</span></div>
-                            <div><span class="text-gray-500">Extension cost</span><br><span class="font-medium text-gray-800">${escapeHtml(dest.extensionCost)}</span></div>
-                            <div><span class="text-gray-500">Accommodation / night</span><br><span class="font-medium text-gray-800">${escapeHtml(dest.accommodation)}</span></div>
-                        </div>
-                        <div class="pt-2 text-xs text-gray-600 border-t border-gray-100">
-                            <span class="font-semibold">Flight:</span> ${escapeHtml(dest.flightNote)}
-                        </div>
+                    <div class="px-5 py-3 text-xs font-medium border-t ${footerClass}">
+                        ${escapeHtml(dest.footerNote)}
                     </div>
-                </div>
-                <div class="card-footer px-5 py-3 text-xs font-medium border-t ${footerClass}">
-                    ${escapeHtml(dest.footerNote)}
-                </div>
-            `;
-            cardsContainer.appendChild(card);
-        });
-    }
-
-    // ---------- Build Edit Forms (admin only) ----------
-    function buildEditForms() {
-        if (!editFormsContainer) return;
-        editFormsContainer.innerHTML = '';
-        destinations.forEach((dest, idx) => {
-            const formDiv = document.createElement('div');
-            formDiv.className = "border border-gray-200 rounded-lg p-3 bg-gray-50";
-            formDiv.innerHTML = `
-                <div class="font-medium text-gray-700 mb-2 flex items-center gap-2"><span>${dest.flagEmoji || '🌍'}</span> ${escapeHtml(dest.name)} (${escapeHtml(dest.city)})</div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div><label class="block text-xs text-gray-500">Name</label><input type="text" data-idx="${idx}" data-field="name" value="${escapeHtml(dest.name)}" class="w-full border rounded px-2 py-1"></div>
-                    <div><label class="block text-xs text-gray-500">City</label><input type="text" data-idx="${idx}" data-field="city" value="${escapeHtml(dest.city)}" class="w-full border rounded px-2 py-1"></div>
-                    <div><label class="block text-xs text-gray-500">Risk label</label><input type="text" data-idx="${idx}" data-field="risk" value="${escapeHtml(dest.risk)}" class="w-full border rounded px-2 py-1"></div>
-                    <div><label class="block text-xs text-gray-500">Risk color (emerald/rose/amber)</label><input type="text" data-idx="${idx}" data-field="riskColor" value="${escapeHtml(dest.riskColor)}" class="w-full border rounded px-2 py-1"></div>
-                    <div><label class="block text-xs text-gray-500">Visa Fee</label><input type="text" data-idx="${idx}" data-field="visaFee" value="${escapeHtml(dest.visaFee)}" class="w-full border rounded px-2 py-1"></div>
-                    <div><label class="block text-xs text-gray-500">Processing</label><input type="text" data-idx="${idx}" data-field="processing" value="${escapeHtml(dest.processing)}" class="w-full border rounded px-2 py-1"></div>
-                    <div><label class="block text-xs text-gray-500">Max Stay</label><input type="text" data-idx="${idx}" data-field="maxStay" value="${escapeHtml(dest.maxStay)}" class="w-full border rounded px-2 py-1"></div>
-                    <div><label class="block text-xs text-gray-500">Extension Cost</label><input type="text" data-idx="${idx}" data-field="extensionCost" value="${escapeHtml(dest.extensionCost)}" class="w-full border rounded px-2 py-1"></div>
-                    <div><label class="block text-xs text-gray-500">Accommodation</label><input type="text" data-idx="${idx}" data-field="accommodation" value="${escapeHtml(dest.accommodation)}" class="w-full border rounded px-2 py-1"></div>
-                    <div><label class="block text-xs text-gray-500">Flight note</label><input type="text" data-idx="${idx}" data-field="flightNote" value="${escapeHtml(dest.flightNote)}" class="w-full border rounded px-2 py-1"></div>
-                    <div class="md:col-span-2"><label class="block text-xs text-gray-500">Footer note</label><input type="text" data-idx="${idx}" data-field="footerNote" value="${escapeHtml(dest.footerNote)}" class="w-full border rounded px-2 py-1"></div>
-                    <div><label class="block text-xs text-gray-500">Flag emoji</label><input type="text" data-idx="${idx}" data-field="flagEmoji" value="${escapeHtml(dest.flagEmoji)}" class="w-full border rounded px-2 py-1" placeholder="🇮🇩"></div>
-                </div>
-            `;
-            editFormsContainer.appendChild(formDiv);
-        });
-        
-        // Attach change events to sync single row data without layout disruption or network flooding
-        document.querySelectorAll('#editFormsContainer input').forEach(inp => {
-            inp.addEventListener('change', async (e) => {
-                if (!isAdmin) return;
-                
-                const idx = parseInt(e.target.getAttribute('data-idx'));
-                const field = e.target.getAttribute('data-field');
-                
-                // Track update locally
-                destinations[idx][field] = e.target.value;
-                
-                // Fire delta object exclusively for target row 
-                const targetRow = destinations[idx];
-                const { error } = await supabase
-                    .from(TABLE)
-                    .upsert({
-                        id: targetRow.id,
-                        [field]: e.target.value
-                    }, { onConflict: 'id' });
-
-                if (error) {
-                    console.error("Failed to sync change:", error);
-                } else {
-                    renderCards(); 
-                }
+                `;
+                cardsContainer.appendChild(card);
             });
-        });
-    }
-
-    // ---------- Real-time subscription ----------
-    async function loadInitialData() {
-        const { data, error } = await supabase.from(TABLE).select('*');
-        if (error) {
-            console.error("Supabase error:", error);
-            return;
         }
-        if (data && data.length) destinations = data;
-        else console.warn("No data found, please run SQL insert");
-        renderCards();
-    }
-    
-    function subscribeToChanges() {
-        if (realtimeSubscription) supabase.removeChannel(realtimeSubscription);
-        realtimeSubscription = supabase
-            .channel('destinations-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, (payload) => {
-                // Hot reload memory context securely
-                loadInitialData();
-            })
-            .subscribe();
-    }
 
-    // ---------- Admin mode ----------
-    function enterAdmin() {
-        isAdmin = true;
-        adminLoginBtn.classList.add('hidden');
-        adminLogoutBtn.classList.remove('hidden');
-        editPanel.classList.remove('hidden');
-        buildEditForms();
-        modeHint.innerText = "Admin mode – edit any field, changes sync live to Supabase ⚡";
-        modeHint.classList.add("text-amber-600");
-    }
-    function exitAdmin() {
-        isAdmin = false;
-        adminLoginBtn.classList.remove('hidden');
-        adminLogoutBtn.classList.add('hidden');
-        editPanel.classList.add('hidden');
-        modeHint.innerText = "Viewer mode – live updates from Supabase";
-        modeHint.classList.remove("text-amber-600");
-    }
-    adminLoginBtn.addEventListener('click', () => {
-        const pwd = prompt("Enter admin password:");
-        if (pwd === ADMIN_PASSWORD) enterAdmin();
-        else if (pwd !== null) alert("Wrong password.");
-    });
-    adminLogoutBtn.addEventListener('click', exitAdmin);
-    closeEditPanel.addEventListener('click', () => { if(isAdmin) editPanel.classList.add('hidden'); });
-
-    // ---------- PNG Export ----------
-    async function exportPNG() {
-        const container = document.getElementById('cardsContainer');
-        if (!container) return;
-        const btn = document.getElementById('exportPngBtn');
-        const original = btn.innerHTML;
-        btn.innerHTML = "⏳ Capturing...";
-        btn.disabled = true;
-        try {
-            const canvas = await html2canvas(container, { 
-                scale: 2.5, 
-                backgroundColor: '#f3f4f6',
-                logging: false,
-                useCORS: false
+        // Build edit forms (uses camelCase field names)
+        function buildEditForms() {
+            if (!editFormsContainer) return;
+            editFormsContainer.innerHTML = '';
+            destinations.forEach((dest, idx) => {
+                const formDiv = document.createElement('div');
+                formDiv.className = "border border-gray-200 rounded-lg p-3 bg-gray-50";
+                formDiv.innerHTML = `
+                    <div class="font-medium text-gray-700 mb-2 flex items-center gap-2"><span>${dest.flagEmoji || '🌍'}</span> ${escapeHtml(dest.name)} (${escapeHtml(dest.city)})</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div><label class="block text-xs text-gray-500">Name</label><input type="text" data-idx="${idx}" data-field="name" value="${escapeHtml(dest.name)}" class="w-full border rounded px-2 py-1"></div>
+                        <div><label class="block text-xs text-gray-500">City</label><input type="text" data-idx="${idx}" data-field="city" value="${escapeHtml(dest.city)}" class="w-full border rounded px-2 py-1"></div>
+                        <div><label class="block text-xs text-gray-500">Risk label</label><input type="text" data-idx="${idx}" data-field="risk" value="${escapeHtml(dest.risk)}" class="w-full border rounded px-2 py-1"></div>
+                        <div><label class="block text-xs text-gray-500">Risk color (emerald/rose/amber)</label><input type="text" data-idx="${idx}" data-field="riskColor" value="${escapeHtml(dest.riskColor)}" class="w-full border rounded px-2 py-1"></div>
+                        <div><label class="block text-xs text-gray-500">Visa Fee</label><input type="text" data-idx="${idx}" data-field="visaFee" value="${escapeHtml(dest.visaFee)}" class="w-full border rounded px-2 py-1"></div>
+                        <div><label class="block text-xs text-gray-500">Processing</label><input type="text" data-idx="${idx}" data-field="processing" value="${escapeHtml(dest.processing)}" class="w-full border rounded px-2 py-1"></div>
+                        <div><label class="block text-xs text-gray-500">Max Stay</label><input type="text" data-idx="${idx}" data-field="maxStay" value="${escapeHtml(dest.maxStay)}" class="w-full border rounded px-2 py-1"></div>
+                        <div><label class="block text-xs text-gray-500">Extension Cost</label><input type="text" data-idx="${idx}" data-field="extensionCost" value="${escapeHtml(dest.extensionCost)}" class="w-full border rounded px-2 py-1"></div>
+                        <div><label class="block text-xs text-gray-500">Accommodation</label><input type="text" data-idx="${idx}" data-field="accommodation" value="${escapeHtml(dest.accommodation)}" class="w-full border rounded px-2 py-1"></div>
+                        <div><label class="block text-xs text-gray-500">Flight note</label><input type="text" data-idx="${idx}" data-field="flightNote" value="${escapeHtml(dest.flightNote)}" class="w-full border rounded px-2 py-1"></div>
+                        <div class="md:col-span-2"><label class="block text-xs text-gray-500">Footer note</label><input type="text" data-idx="${idx}" data-field="footerNote" value="${escapeHtml(dest.footerNote)}" class="w-full border rounded px-2 py-1"></div>
+                        <div><label class="block text-xs text-gray-500">Flag emoji</label><input type="text" data-idx="${idx}" data-field="flagEmoji" value="${escapeHtml(dest.flagEmoji)}" class="w-full border rounded px-2 py-1" placeholder="🇮🇩"></div>
+                    </div>
+                `;
+                editFormsContainer.appendChild(formDiv);
             });
-            const link = document.createElement('a');
-            link.download = 'transit_dashboard.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        } catch(e) { alert("PNG export failed: " + e); }
-        btn.innerHTML = original;
-        btn.disabled = false;
-    }
-    document.getElementById('exportPngBtn').addEventListener('click', exportPNG);
 
-    // ---------- Start ----------
-    loadInitialData().then(() => subscribeToChanges());
+            // Save on change (blur)
+            document.querySelectorAll('#editFormsContainer input').forEach(inp => {
+                inp.addEventListener('change', async (e) => {
+                    if (!isAdmin) return;
+                    const idx = parseInt(e.target.getAttribute('data-idx'));
+                    const field = e.target.getAttribute('data-field');
+                    const newValue = e.target.value;
+                    const oldValue = destinations[idx][field];
+                    destinations[idx][field] = newValue;
+                    renderCards();
+                    const { error } = await supabase
+                        .from(TABLE)
+                        .upsert({ id: destinations[idx].id, [field]: newValue }, { onConflict: 'id' });
+                    if (error) {
+                        console.error(error);
+                        destinations[idx][field] = oldValue;
+                        renderCards();
+                        buildEditForms();
+                    }
+                });
+            });
+        }
+
+        async function loadData() {
+            const { data, error } = await supabase.from(TABLE).select('*');
+            if (error) {
+                console.error(error);
+                cardsContainer.innerHTML = `<div class="bg-white rounded-2xl p-8 text-center text-red-500 col-span-full">Error: ${error.message}</div>`;
+                return;
+            }
+            if (data && data.length) {
+                destinations = data;
+                renderCards();
+                if (isAdmin && editPanel.style.display !== 'none') buildEditForms();
+            } else {
+                cardsContainer.innerHTML = '<div class="bg-white rounded-2xl p-8 text-center text-amber-600 col-span-full">No data found. Please run INSERT SQL.</div>';
+            }
+        }
+
+        function subscribeRealtime() {
+            if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+            realtimeChannel = supabase
+                .channel('destinations-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, () => loadData())
+                .subscribe();
+        }
+
+        function enterAdmin() {
+            isAdmin = true;
+            adminLoginBtn.classList.add('hidden');
+            adminLogoutBtn.classList.remove('hidden');
+            editPanel.classList.remove('hidden');
+            buildEditForms();
+            modeHint.innerText = "Admin mode – edit any field, changes sync live ⚡";
+            modeHint.classList.add("text-amber-600");
+        }
+
+        function exitAdmin() {
+            isAdmin = false;
+            adminLoginBtn.classList.remove('hidden');
+            adminLogoutBtn.classList.add('hidden');
+            editPanel.classList.add('hidden');
+            modeHint.innerText = "Viewer mode – live updates from Supabase";
+            modeHint.classList.remove("text-amber-600");
+        }
+
+        if (adminLoginBtn) {
+            adminLoginBtn.addEventListener('click', () => {
+                const pwd = prompt("Enter admin password:");
+                if (pwd === ADMIN_PASSWORD) enterAdmin();
+                else if (pwd !== null) alert("Wrong password.");
+            });
+        }
+        if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', exitAdmin);
+        if (closeEditPanel) closeEditPanel.addEventListener('click', () => { if(isAdmin) editPanel.classList.add('hidden'); });
+
+        if (exportBtn) {
+            exportBtn.addEventListener('click', async () => {
+                if (!cardsContainer) return;
+                const original = exportBtn.innerHTML;
+                exportBtn.innerHTML = "⏳ Capturing...";
+                exportBtn.disabled = true;
+                try {
+                    const canvas = await html2canvas(cardsContainer, { scale: 2.5, backgroundColor: '#f3f4f6' });
+                    const link = document.createElement('a');
+                    link.download = 'transit_dashboard.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                } catch(e) { alert("PNG export failed: " + e); }
+                exportBtn.innerHTML = original;
+                exportBtn.disabled = false;
+            });
+        }
+
+        loadData().then(() => subscribeRealtime());
+    })();
 </script>
 </body>
 </html>
