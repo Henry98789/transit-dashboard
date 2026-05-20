@@ -26,7 +26,6 @@
 <body class="p-4 md:p-8">
 
 <div class="max-w-7xl mx-auto">
-    <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
             <h1 class="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">✈️ Transit Comparison</h1>
@@ -39,7 +38,6 @@
         </div>
     </div>
 
-    <!-- Edit Panel (admin only) -->
     <div id="editPanel" class="hidden mb-6 bg-white p-5 rounded-2xl shadow-md border border-gray-200">
         <div class="flex justify-between items-center mb-3">
             <h3 class="font-semibold text-gray-700">✏️ Edit Destinations (live sync)</h3>
@@ -49,7 +47,6 @@
         <div class="mt-4 text-right text-xs text-gray-400">Changes save automatically to Supabase ⚡</div>
     </div>
 
-    <!-- Cards grid -->
     <div id="cardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 card-grid"></div>
 
     <div class="mt-8 text-center text-xs text-gray-400 border-t pt-6">
@@ -58,9 +55,9 @@
 </div>
 
 <script>
-    // ========== 🔧 REPLACE WITH YOUR SUPABASE CREDENTIALS ==========
-    const SUPABASE_URL = "https://tkbgeacavsgcxelfobll.supabase.co"; // place URL HERE: PROJECT SETTINGS → SETTINGS → API KEYS → Publishable and secret API keys
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrYmdlYWNhdnNnY3hlbGZvYmxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzE2NTQsImV4cCI6MjA5NDg0NzY1NH0.VPRL4C54MWuVYW8RfXvi7hjc731voWotUblc4gUcvDU"; // place ANON KEY HERE (Legacy anon, service_role API keys)
+    // ========== 🔧 SUPABASE CREDENTIALS ==========
+    const SUPABASE_URL = "https://tkbgeacavsgcxelfobll.supabase.co"; 
+    const SUPABASE_ANON_KEY = "sb_publishable_hzwEJKKh7rwrloigc3YkFw_P9E-bCYo"; 
     // ===============================================================
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -170,28 +167,31 @@
             editFormsContainer.appendChild(formDiv);
         });
         
-        // Attach input events to auto-save to Supabase
+        // Attach change events to sync single row data without layout disruption or network flooding
         document.querySelectorAll('#editFormsContainer input').forEach(inp => {
-            inp.addEventListener('input', async () => {
+            inp.addEventListener('change', async (e) => {
                 if (!isAdmin) return;
-                // rebuild destinations array
-                const newList = [];
-                for (let i = 0; i < destinations.length; i++) {
-                    const old = destinations[i];
-                    const updated = { ...old };
-                    const fields = ['name','city','risk','riskColor','visaFee','processing','maxStay','extensionCost','accommodation','flightNote','footerNote','flagEmoji'];
-                    fields.forEach(field => {
-                        const inputEl = document.querySelector(`#editFormsContainer input[data-idx="${i}"][data-field="${field}"]`);
-                        if (inputEl) updated[field] = inputEl.value;
-                    });
-                    newList.push(updated);
+                
+                const idx = parseInt(e.target.getAttribute('data-idx'));
+                const field = e.target.getAttribute('data-field');
+                
+                // Track update locally
+                destinations[idx][field] = e.target.value;
+                
+                // Fire delta object exclusively for target row 
+                const targetRow = destinations[idx];
+                const { error } = await supabase
+                    .from(TABLE)
+                    .upsert({
+                        id: targetRow.id,
+                        [field]: e.target.value
+                    }, { onConflict: 'id' });
+
+                if (error) {
+                    console.error("Failed to sync change:", error);
+                } else {
+                    renderCards(); 
                 }
-                destinations = newList;
-                // Update Supabase for each row
-                for (let dest of destinations) {
-                    await supabase.from(TABLE).upsert(dest, { onConflict: 'id' });
-                }
-                renderCards(); // immediate visual feedback
             });
         });
     }
@@ -213,7 +213,7 @@
         realtimeSubscription = supabase
             .channel('destinations-changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, (payload) => {
-                // Refresh all data on any change
+                // Hot reload memory context securely
                 loadInitialData();
             })
             .subscribe();
@@ -245,7 +245,7 @@
     adminLogoutBtn.addEventListener('click', exitAdmin);
     closeEditPanel.addEventListener('click', () => { if(isAdmin) editPanel.classList.add('hidden'); });
 
-    // ---------- PNG Export (fixed alignment) ----------
+    // ---------- PNG Export ----------
     async function exportPNG() {
         const container = document.getElementById('cardsContainer');
         if (!container) return;
