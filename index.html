@@ -161,7 +161,7 @@
             return 'bg-gray-50 border-gray-100 text-gray-600';
         }
 
-        // Render cards using camelCase column names
+        // Render cards using camelCase column names with whitespace-pre-line for multiline fields
         function renderCards() {
             if (!cardsContainer) return;
             if (!destinations.length) {
@@ -195,15 +195,29 @@
                                 <span class="font-bold text-gray-900">${escapeHtml(dest.visaFee)}</span>
                             </div>
                             <div class="mt-3 space-y-2 text-sm">
-                                <div class="flex justify-between"><span class="text-gray-500">Processing</span><span class="text-gray-800 text-right">${escapeHtml(dest.processing)}</span></div>
-                                <div class="flex justify-between"><span class="text-gray-500">Max stay</span><span class="text-gray-800 text-right">${escapeHtml(dest.maxStay)}</span></div>
-                                <div class="flex justify-between"><span class="text-gray-500">Extension cost</span><span class="text-gray-800">${escapeHtml(dest.extensionCost)}</span></div>
-                                <div class="flex justify-between"><span class="text-gray-500">Accommodation / night</span><span class="text-gray-800">${escapeHtml(dest.accommodation)}</span></div>
-                                <div class="mt-2 pt-2 border-t border-gray-50 text-xs text-gray-500"><span class="font-medium">Flight:</span> ${escapeHtml(dest.flightNote)}</div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Processing</span>
+                                    <span class="text-gray-800 text-right">${escapeHtml(dest.processing)}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Max stay</span>
+                                    <span class="text-gray-800 text-right whitespace-pre-line">${escapeHtml(dest.maxStay)}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Extension cost</span>
+                                    <span class="text-gray-800 whitespace-pre-line">${escapeHtml(dest.extensionCost)}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">Accommodation / night</span>
+                                    <span class="text-gray-800">${escapeHtml(dest.accommodation)}</span>
+                                </div>
+                                <div class="mt-2 pt-2 border-t border-gray-50 text-xs text-gray-500 whitespace-pre-line">
+                                    <span class="font-medium">Flight:</span> ${escapeHtml(dest.flightNote)}
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="px-5 py-3 text-xs font-medium border-t ${footerClass}">
+                    <div class="px-5 py-3 text-xs font-medium border-t ${footerClass} whitespace-pre-line">
                         ${escapeHtml(dest.footerNote)}
                     </div>
                 `;
